@@ -1,6 +1,24 @@
 const express = require('express');
 const app = express();
 app.use(express.json());
+// Request logger
+const logs = [];
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    logs.unshift({
+      id: logs.length + 1,
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      duration: `${Date.now() - start}ms`,
+      time: new Date().toISOString(),
+      ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    });
+    if (logs.length > 100) logs.pop();
+  });
+  next();
+});
 
 const tasks = [];
 const startTime = Date.now();
@@ -31,7 +49,92 @@ app.get('/status', (req, res) => {
   <div class="bar"><span class="label">Timestamp</span><span class="value">${new Date().toISOString()}</span></div>
   <hr class="divider"><p class="footer">Auto-deployed via GitHub Actions · Hosted on Vercel</p></div></body></html>`);
 });
+app.get('/logs', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>API Logs</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; }
+    header { background: #111; border-bottom: 1px solid #222; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    .live { background: #22c55e22; color: #22c55e; font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid #22c55e44; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .container { max-width: 960px; margin: 32px auto; padding: 0 24px; }
+    .stats { display: flex; gap: 12px; margin-bottom: 24px; }
+    .stat { background: #111; border: 1px solid #222; border-radius: 10px; padding: 14px 20px; flex: 1; }
+    .stat-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 22px; font-weight: 600; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; background: #111; border: 1px solid #222; border-radius: 12px; overflow: hidden; font-size: 13px; }
+    th { text-align: left; padding: 12px 16px; font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #1e1e1e; }
+    td { padding: 12px 16px; border-bottom: 1px solid #161616; font-family: 'SF Mono', monospace; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #141414; }
+    .method { font-weight: 600; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+    .GET { background: #3b82f622; color: #3b82f6; }
+    .POST { background: #22c55e22; color: #22c55e; }
+    .DELETE { background: #ef444422; color: #ef4444; }
+    .PATCH { background: #f59e0b22; color: #f59e0b; }
+    .s2 { color: #22c55e; }
+    .s4, .s5 { color: #ef4444; }
+    .empty { text-align: center; color: #333; padding: 48px; }
+    .counter { font-size: 12px; color: #444; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📋 API Request Logs</h1>
+    <span class="live">● Live — refreshes every 3s</span>
+  </header>
+  <div class="container">
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Total Requests</div><div class="stat-value" id="total">0</div></div>
+      <div class="stat"><div class="stat-label">Success (2xx)</div><div class="stat-value s2" id="success">0</div></div>
+      <div class="stat"><div class="stat-label">Errors (4xx/5xx)</div><div class="stat-value s4" id="errors">0</div></div>
+      <div class="stat"><div class="stat-label">Last Endpoint</div><div class="stat-value" id="last" style="font-size:14px">—</div></div>
+    </div>
+    <div class="counter" id="counter"></div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Method</th><th>Path</th><th>Status</th><th>Duration</th><th>Time</th></tr>
+      </thead>
+      <tbody id="log-body"><tr><td colspan="6" class="empty">No requests logged yet.</td></tr></tbody>
+    </table>
+  </div>
+  <script>
+    async function loadLogs() {
+      const res = await fetch('/logs/data');
+      const data = await res.json();
+      document.getElementById('total').textContent = data.length;
+      document.getElementById('success').textContent = data.filter(l => l.status < 400).length;
+      document.getElementById('errors').textContent = data.filter(l => l.status >= 400).length;
+      document.getElementById('last').textContent = data[0]?.path || '—';
+      document.getElementById('counter').textContent = data.length + ' requests recorded (last 100)';
+      const tbody = document.getElementById('log-body');
+      if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No requests yet.</td></tr>'; return; }
+      tbody.innerHTML = data.map(l => \`
+        <tr>
+          <td style="color:#333">\${l.id}</td>
+          <td><span class="method \${l.method}">\${l.method}</span></td>
+          <td>\${l.path}</td>
+          <td class="\${l.status < 400 ? 's2' : 's4'}">\${l.status}</td>
+          <td style="color:#555">\${l.duration}</td>
+          <td style="color:#444">\${new Date(l.time).toLocaleTimeString()}</td>
+        </tr>
+      \`).join('');
+    }
+    loadLogs();
+    setInterval(loadLogs, 3000);
+  </script>
+</body>
+</html>`);
+});
 
+app.get('/logs/data', (req, res) => {
+  res.json(logs);
+});
 app.get('/dashboard', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="en">
