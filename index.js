@@ -182,7 +182,7 @@ app.get('/dashboard', (req, res) => {
 </head>
 <body>
   <header>
-    <h1>⚡ Task Dashboard</h1>
+    <h1> Task Dashboard</h1>
     <span class="badge">● Live</span>
   </header>
   <div class="container">
