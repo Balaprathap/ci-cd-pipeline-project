@@ -9,7 +9,7 @@ A production-grade REST API with automated CI/CD pipeline deployed to the cloud.
 - **Health:** https://ci-cd-pipeline-project-three.vercel.app/health
 - **Status:** https://ci-cd-pipeline-project-three.vercel.app/status
 
-## 🛠️ Tech Stack
+##  Tech Stack
 - **Runtime:** Node.js + Express
 - **CI/CD:** GitHub Actions
 - **Cloud Hosting:** Vercel (Serverless)
