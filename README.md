@@ -4,7 +4,7 @@
 
 A production-grade REST API with automated CI/CD pipeline deployed to the cloud.
 
-## 🚀 Live Demo
+##  Live Demo
 - **API:** https://ci-cd-pipeline-project-three.vercel.app
 - **Health:** https://ci-cd-pipeline-project-three.vercel.app/health
 - **Status:** https://ci-cd-pipeline-project-three.vercel.app/status
@@ -15,7 +15,7 @@ A production-grade REST API with automated CI/CD pipeline deployed to the cloud.
 - **Cloud Hosting:** Vercel (Serverless)
 - **Testing:** Jest + Supertest
 
-## 📡 API Endpoints
+##  API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -30,7 +30,7 @@ A production-grade REST API with automated CI/CD pipeline deployed to the cloud.
 | PATCH | `/tasks/:id` | Update task |
 | DELETE | `/tasks/:id` | Delete task |
 
-## ⚙️ Pipeline Flow
+##  Pipeline Flow
 1. Push code to `main` branch
 2. GitHub Actions triggers automatically
 3. Installs dependencies
@@ -38,7 +38,7 @@ A production-grade REST API with automated CI/CD pipeline deployed to the cloud.
 5. If tests pass → deploys to Vercel
 6. If tests fail → deployment is blocked
 
-## 🧪 Run Locally
+##  Run Locally
 ```bash
 npm install
 npm test
